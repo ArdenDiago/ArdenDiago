@@ -1,65 +1,53 @@
-<h1 align="left">Hey 👋 What's up?</h1>
+<div align="center">
 
-###
+# Hey, I'm Arden Diago 👋
 
-<p align="left">My name is Arden Diago and I'm a Junior Software Developer from India</p>
+**DevOps & DevSecOps Engineer** · MCA Final Year @ Christ University, Bangalore
 
-###
+`Docker` `Kubernetes` `AWS` `GitHub Actions` `DevSecOps` `Terraform`
 
-<h2 align="left">About me</h2>
-
-###
-
-<p align="left">✨ Creating bugs since ...<br>📚 I'm currently learning ...<br>🎯 Goals: ...<br>🎲 Fun fact: ...</p>
-
-###
-
-<h2 align="left">Things That I Know</h2>
-
-###
-<div align="left">
-   <img src="https://github.com/tandpfun/skill-icons/blob/main/icons/Python-Dark.svg" height="40" alt="python logo"  />
-  <img width="12" />
-  
-  <img src="https://github.com/tandpfun/skill-icons/blob/main/icons/React-Dark.svg" height="40" alt="react logo"  />
-  <img width="12" />
-  
-  <img src="https://github.com/tandpfun/skill-icons/blob/main/icons/C.svg" height="40" alt="c logo"  />
-  <img width="12" />
-
-  <img src="https://github.com/tandpfun/skill-icons/blob/main/icons/Java-Dark.svg" height="40" alt="java logo"  />
-  <img width="12" />
-
-  <img src="https://github.com/tandpfun/skill-icons/blob/main/icons/HTML.svg" height="40" alt="HTML logo"  />
-  <img width="12" />
-  
-  <img src="https://github.com/tandpfun/skill-icons/blob/main/icons/CSS.svg" height="40" alt="css logo"  />
-  <img width="12" />
-  
-  <img src="https://github.com/tandpfun/skill-icons/blob/main/icons/JavaScript.svg" height="40" alt="JavaScript logo"  />
-  <img width="12" />
-
-  <img src="https://github.com/tandpfun/skill-icons/blob/main/icons/MySQL-Dark.svg" height="40" alt="My SQL logo"  />
-  <img width="12" />
-  
-  <img src="https://github.com/tandpfun/skill-icons/blob/main/icons/Linux-Light.svg" height="40" alt="Linux logo"  />
-  <img width="12" />
-</div>
-<h2 align="left">Contact Information</h2>
-<div align="left">
-  <a href='https://www.linkedin.com/in/arden-diago-a89751279/' >
-    <img src="https://raw.githubusercontent.com/maurodesouza/profile-readme-generator/master/src/assets/icons/social/linkedin/default.svg" width="52" height="40" alt="linkedin logo"  />
-  </a>
-  <a href='https://twitter.com/ArdenDiago' > 
-  <img src="https://raw.githubusercontent.com/maurodesouza/profile-readme-generator/master/src/assets/icons/social/twitter/default.svg" width="52" height="40" alt="twitter logo"  /> 
-  </a>
-  <a href='https://mail.google.com/mail/u/0/#inbox?compose=CllgCJvqsPqpZQlsvCxJGrzzlSWJsPZmxttLtRVNTQJqDVnKtbPxJgHLjdcftrRTpmkZRHLtLcL'>
-  <img src='https://github.com/tandpfun/skill-icons/blob/main/icons/Gmail-Light.svg' width="52" height="40" alt="gmail logo"  /> 
-  </a>
-  
-  
 </div>
 
-###
+---
 
-###
+### About me
+
+I'm a final-year MCA student who genuinely enjoys the infrastructure side of software — automating deployments, tightening up CI/CD pipelines, and making sure things don't break in production (or at least break gracefully).
+
+I've had hands-on experience as a DevOps Developer at **Acumen Travels**, and outside of that I've been building **Gatekeeper** — my own API gateway with load balancing, circuit breakers, rate limiting, and distributed tracing, deployed on Docker and AWS EC2.
+
+I run a home server for fun, keep my Linux dev environment automated with bash scripts, and occasionally torture my RTX 3050 with ML workloads.
+
+🎯 Actively looking for **DevOps / DevSecOps Engineer** roles.
+
+---
+
+### Things I work with
+
+| Category | Tools |
+|---|---|
+| Containers & Orchestration | Docker, Kubernetes |
+| CI/CD | GitHub Actions |
+| Cloud | AWS (EC2, S3) |
+| Infrastructure as Code | Terraform *(learning)* |
+| Security | Trivy, Gitleaks, Bandit, Semgrep, SonarQube, Snyk |
+| Scripting & OS | Linux, Bash, Python |
+| Backend | Node.js, Nginx, MongoDB, PostgreSQL |
+
+---
+
+### Featured project
+
+**[Gatekeeper](https://github.com/ArdenDiago/Gatekeeper)**
+> Intelligent API gateway on the MERN stack — dynamic load balancing, circuit breaker patterns, rate limiting, JWT auth, and distributed tracing. Deployed on Docker & AWS EC2.
+
+`Node.js` `Docker` `AWS EC2` `MongoDB` `Nginx` `JWT`
+
+---
+
+### Get in touch
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/arden-diago-a89751279/)
+[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=flat&logo=twitter&logoColor=white)](https://twitter.com/ArdenDiago)
+[![Gmail](https://img.shields.io/badge/Gmail-EA4335?style=flat&logo=gmail&logoColor=white)](mailto:diagoarden@gmail.com)
+[🌐 ardend.dev](https://ardend.dev)
