@@ -9,9 +9,12 @@ and would otherwise fall back to whatever the viewer has installed.
 """
 import base64
 import html
+import http.client
 import json
 import os
+import re
 import subprocess
+import urllib.error
 import urllib.request
 from datetime import date
 from functools import lru_cache
@@ -36,6 +39,17 @@ PIPELINE = [
     ('Checkout', 'push to main'), ('Install', 'client + server'), ('Test', 'Vitest suites'),
     ('Bake data', 'MongoDB to HTML'), ('Build image', 'Docker, 2 stages'), ('Deploy', 'Fly.io, Mumbai'),
 ]
+# Markup and styling, left off the languages card
+SKIP = {'HTML', 'CSS', 'SCSS'}
+# Folded into one Infrastructure row. GitHub reports these three as languages...
+INFRA_LANGS = {'HCL': 'Terraform', 'Dockerfile': 'Docker', 'Shell': 'Shell'}
+# ...and these are found by path, because GitHub's language stats ignore YAML
+INFRA_PATHS = {
+    'YAML': re.compile(r'\.ya?ml$'),
+    'Terraform': re.compile(r'\.(tf|tfvars|hcl)$'),
+    'Ansible': re.compile(r'(^|/)(ansible[^/]*|playbooks?|roles/[^/]+/tasks)/|(^|/)ansible\.cfg$', re.I),
+}
+VENDORED = re.compile(r'(^|/)(node_modules|vendor|\.?venv|dist|build)/|lock\.ya?ml$')
 # ------------------------------------------------------------------------------
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -90,21 +104,37 @@ def card(h, label, body, defs=''):
     )
 
 
-def fetch():
-    token = os.environ.get('GH_TOKEN') or os.environ.get('GITHUB_TOKEN') \
+@lru_cache(maxsize=None)
+def token():
+    return os.environ.get('GH_TOKEN') or os.environ.get('GITHUB_TOKEN') \
         or subprocess.run(['gh', 'auth', 'token'], capture_output=True, text=True, check=True).stdout.strip()
+
+
+def api(path, body=None):
+    req = urllib.request.Request(
+        f'https://api.github.com/{path}',
+        body and json.dumps(body).encode(),
+        {'Authorization': f'Bearer {token()}', 'User-Agent': LOGIN},
+    )
+    for attempt in range(3):
+        try:
+            return json.load(urllib.request.urlopen(req, timeout=30))
+        except http.client.IncompleteRead:  # a very large file tree can be cut off mid-read
+            if attempt == 2:
+                raise
+
+
+def fetch():
     query = '''query($login: String!) { user(login: $login) {
       followers { totalCount }
       repositories(ownerAffiliations: OWNER, privacy: PUBLIC, isFork: false, first: 100) {
-        totalCount nodes { stargazerCount languages(first: 10, orderBy: {field: SIZE, direction: DESC}) { edges { size node { name color } } } } }
+        totalCount nodes { stargazerCount } }
+      # Private repositories too, when the token can read them
+      code: repositories(ownerAffiliations: OWNER, isFork: false, first: 100) {
+        totalCount nodes { name languages(first: 20) { edges { node { name color } } } } }
       contributionsCollection { contributionCalendar { totalContributions weeks { contributionDays { date contributionCount } } } }
     } }'''
-    req = urllib.request.Request(
-        'https://api.github.com/graphql',
-        json.dumps({'query': query, 'variables': {'login': LOGIN}}).encode(),
-        {'Authorization': f'Bearer {token}', 'User-Agent': LOGIN},
-    )
-    res = json.load(urllib.request.urlopen(req, timeout=30))
+    res = api('graphql', {'query': query, 'variables': {'login': LOGIN}})
     if res.get('errors'):
         raise SystemExit(res['errors'])
     return res['data']['user']
@@ -227,25 +257,47 @@ def heatmap(weeks, total):
     return card(round(foot + 24), f'{total:,} contributions in the last 12 months, {active} active days', ''.join(b))
 
 
+def path_kinds(paths):
+    """Infrastructure kinds among a repository's file paths, ignoring vendored code."""
+    paths = [p for p in paths if not VENDORED.search(p)]
+    return {kind for kind, rx in INFRA_PATHS.items() if any(rx.search(p) for p in paths)}
+
+
+assert path_kinds(['node_modules/x/.travis.yml', 'pnpm-lock.yaml', 'src/app.py']) == set()
+assert path_kinds(['.github/workflows/ci.yml', 'infra/main.tf', 'roles/web/tasks/main.yml']) == {'YAML', 'Terraform', 'Ansible'}
+
+
+def infra(repo):
+    kinds = {INFRA_LANGS[e['node']['name']] for e in repo['languages']['edges'] if e['node']['name'] in INFRA_LANGS}
+    try:
+        tree = api(f'repos/{LOGIN}/{repo["name"]}/git/trees/HEAD?recursive=1')['tree']
+    except urllib.error.HTTPError:  # an empty repository has no tree
+        tree = []
+    return kinds | path_kinds(f['path'] for f in tree if f['type'] == 'blob')
+
+
 def languages(repos):
-    size, colour = {}, {}
+    count, colour, kinds = {}, {'Infrastructure': STR}, set()
     for repo in repos['nodes']:
+        found = infra(repo)
+        kinds |= found
+        names = {'Infrastructure'} if found else set()
         for e in repo['languages']['edges']:
-            size[e['node']['name']] = size.get(e['node']['name'], 0) + e['size']
-            colour[e['node']['name']] = e['node']['color'] or MUTED
-    ranked = sorted(size.items(), key=lambda kv: -kv[1])
-    rows = ranked[:5] + [('Other', sum(v for _, v in ranked[5:]))]
-    colour['Other'] = SEAM_STRONG
-    all_bytes = sum(size.values()) or 1
+            names.add(e['node']['name'])
+            colour.setdefault(e['node']['name'], e['node']['color'] or MUTED)
+        for name in names - SKIP - INFRA_LANGS.keys():
+            count[name] = count.get(name, 0) + 1
+    rows = sorted(count.items(), key=lambda kv: (-kv[1], kv[0]))[:6]
+    shown = sum(v for _, v in rows) or 1
     b = [
         text(28, 43, 'Languages', 19, INK, SANS, 600, track=-.015),
-        text(W - 28, 42, f'by bytes across {repos["totalCount"]} public repositories', 12, MUTED, anchor='end'),
+        text(W - 28, 42, f'by repositories using each, out of {repos["totalCount"]}', 12, MUTED, anchor='end'),
     ]
-    # One stacked bar; each segment is a share of the whole, so it needs no empty track
+    # One stacked bar; each segment is a share of the rows shown, so it needs no empty track
     x, bar_w = 28, W - 56
     segments = []
     for name, v in rows:
-        w = v / all_bytes * bar_w
+        w = v / shown * bar_w
         segments.append(f'<rect x="{x:.1f}" y="66" width="{max(w - 2, 1):.1f}" height="12" fill="{colour[name]}"/>')
         x += w
     b.append(f'<g clip-path="url(#bar)">{"".join(segments)}</g>')
@@ -255,11 +307,13 @@ def languages(repos):
         b += [
             f'<circle cx="{x + 5}" cy="{y - 5}" r="5" fill="{colour[name]}"/>',
             text(x + 20, y, name, 14.5, INK, SANS, 500),
-            text(x + col - 28, y, f'{v / all_bytes:.1%}', 12, MUTED, anchor='end'),
+            text(x + col - 28, y, f'{v} repos', 12, MUTED, anchor='end'),
         ]
+    made_of = 'Infrastructure: ' + ', '.join(k for k in ('YAML', 'Terraform', 'Ansible', 'Docker', 'Shell') if k in kinds)
+    b.append(text(28, 172, made_of, 11, MUTED))
     defs = f'<clipPath id="bar"><rect x="28" y="66" width="{bar_w}" height="12" rx="6"/></clipPath>'
-    label = 'Languages by bytes: ' + ', '.join(f'{n} {v / all_bytes:.0%}' for n, v in rows)
-    return card(168, label, ''.join(b), defs)
+    label = 'Languages by repositories: ' + ', '.join(f'{n} {v}' for n, v in rows) + '. ' + made_of
+    return card(196, label, ''.join(b), defs)
 
 
 if __name__ == '__main__':
@@ -270,7 +324,7 @@ if __name__ == '__main__':
         'hero': hero(),
         'stats': stats(user, calendar['totalContributions']),
         'heatmap': heatmap(calendar['weeks'], calendar['totalContributions']),
-        'languages': languages(user['repositories']),
+        'languages': languages(user['code']),
     }.items():
         (OUT / f'{name}.svg').write_text(svg)
         print(f'assets/{name}.svg  {len(svg) / 1024:.0f} KB')

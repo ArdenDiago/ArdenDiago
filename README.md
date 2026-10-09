@@ -12,7 +12,7 @@
 
 <img src="assets/heatmap.svg" width="100%" alt="Contribution activity over the last 12 months" />
 
-<img src="assets/languages.svg" width="100%" alt="Languages by bytes across my public repositories" />
+<img src="assets/languages.svg" width="100%" alt="Languages by how many of my repositories use each" />
 
 ## About
 
