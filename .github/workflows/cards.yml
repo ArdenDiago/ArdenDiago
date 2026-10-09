@@ -2,7 +2,8 @@ name: Refresh profile cards
 
 on:
   schedule:
-    - cron: "17 2 * * *"
+    # 12:00 am IST (cron is UTC)
+    - cron: "30 18 * * *"
   workflow_dispatch:
   push:
     branches: [main]
